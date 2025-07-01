@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Metragem</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #f2f2f2;
+    }
+    .container {
+      background: white;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+    }
+    label, select, input {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .btn-limpar {
+      background-color: #dc3545;
+    }
+    .resultado {
+      margin-top: 20px;
+      background: #e9ecef;
+      padding: 15px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Calculadora de Metragem</h2>
+    <label for="tipo">Tipo:</label>
+    <select id="tipo">
+      <option value="parede">Parede</option>
+      <option value="piso">Piso</option>
+    </select>
+
+    <label for="tamanho">Tamanho:</label>
+    <select id="tamanho">
+      <option value="pequeno">Pequeno</option>
+      <option value="grande">Grande</option>
+    </select>
+
+    <label for="quantidade">Quantidade:</label>
+    <input type="number" id="quantidade" value="1">
+
+    <label for="preco">Preço por m² (R$):</label>
+    <input type="number" id="preco" value="3" step="0.01">
+
+    <button onclick="calcular()">Calcular</button>
+    <button class="btn-limpar" onclick="limpar()">Limpar</button>
+
+    <div class="resultado" id="resultado"></div>
+  </div>
+
+  <script>
+    const tamanhos = {
+      parede: {
+        pequeno: 65.72,
+        grande: 87.41
+      },
+      piso: {
+        pequeno: 92.21,
+        grande: 139.67
+      }
+    };
+
+    let totalGeral = 0;
+    let totalMetrosGeral = 0;
+    let historico = [];
+
+    function calcular() {
+      const tipo = document.getElementById("tipo").value;
+      const tamanho = document.getElementById("tamanho").value;
+      const quantidade = parseInt(document.getElementById("quantidade").value);
+      const preco = parseFloat(document.getElementById("preco").value);
+
+      const metragem = tamanhos[tipo][tamanho];
+      const totalMetros = metragem * quantidade;
+      const totalValor = totalMetros * preco;
+
+      totalGeral += totalValor;
+      totalMetrosGeral += totalMetros;
+      historico.push({ tipo, tamanho, quantidade, totalMetros, totalValor });
+
+      exibirResultado();
+    }
+
+    function exibirResultado() {
+      const div = document.getElementById("resultado");
+      let html = "<strong>Resumo:</strong><br><ul>";
+      historico.forEach((item) => {
+        html += `<li>${item.quantidade}x ${item.tipo} ${item.tamanho} = ${item.totalMetros.toFixed(2)} m² → R$ ${item.totalValor.toFixed(2)}</li>`;
+      });
+      html += `</ul><strong>Total Geral:</strong><br>🔹 ${totalMetrosGeral.toFixed(2)} m²<br>🔹 R$ ${totalGeral.toFixed(2)}`;
+      div.innerHTML = html;
+    }
+
+    function limpar() {
+      totalGeral = 0;
+      totalMetrosGeral = 0;
+      historico = [];
+      document.getElementById("resultado").innerHTML = "";
+    }
+  </script>
+</body>
+</html>
