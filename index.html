@@ -20,11 +20,13 @@
     }
     h2 {
       text-align: center;
+      text-transform: uppercase;
     }
-    label, select, input {
+    label, input {
       display: block;
       width: 100%;
       margin-top: 10px;
+      text-transform: uppercase;
     }
     button {
       margin-top: 10px;
@@ -35,9 +37,14 @@
       border: none;
       border-radius: 5px;
       font-size: 16px;
+      cursor: pointer;
+      text-transform: uppercase;
     }
     .btn-limpar {
       background-color: #dc3545;
+    }
+    .btn-print {
+      background-color: #007bff;
     }
     .resultado {
       margin-top: 20px;
@@ -45,22 +52,73 @@
       padding: 15px;
       border-radius: 8px;
     }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .detalhe {
+      font-size: 15px;
+      color: #333;
+      text-transform: uppercase;
+    }
+    .detalhe span {
+      color: #666;
+      display: block;
+      margin-top: 5px;
+    }
+    .item button {
+      background-color: transparent;
+      border: none;
+      color: red;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .total {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .total p {
+      margin: 5px 0;
+    }
+
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #resultado, #resultado * {
+        visibility: visible;
+      }
+      #resultado {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        padding: 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="conteudo">
     <h2>Calculadora de Metragem</h2>
+
     <label for="tipo">Tipo:</label>
     <select id="tipo">
       <option value="parede">Parede</option>
       <option value="piso">Piso</option>
     </select>
 
-    <label for="tamanho">Tamanho:</label>
-    <select id="tamanho">
-      <option value="pequeno">Pequeno</option>
-      <option value="grande">Grande</option>
-    </select>
+    <label for="metroManual">TAMANHO EM M²:</label>
+    <input type="text" id="metroManual" placeholder="DIGITE A METRAGEM (EX: 65,2 OU 65.2)">
 
     <label for="quantidade">Quantidade:</label>
     <input type="number" id="quantidade" value="1">
@@ -70,51 +128,65 @@
 
     <button onclick="calcular()">Calcular</button>
     <button class="btn-limpar" onclick="limpar()">Limpar</button>
+    <button class="btn-print" onclick="printPage()">📸 Imprimir / Salvar</button>
 
     <div class="resultado" id="resultado"></div>
   </div>
 
   <script>
-    const tamanhos = {
-      parede: {
-        pequeno: 65.72,
-        grande: 87.41
-      },
-      piso: {
-        pequeno: 92.21,
-        grande: 139.67
-      }
-    };
-
     let totalGeral = 0;
     let totalMetrosGeral = 0;
     let historico = [];
 
     function calcular() {
       const tipo = document.getElementById("tipo").value;
-      const tamanho = document.getElementById("tamanho").value;
       const quantidade = parseInt(document.getElementById("quantidade").value);
       const preco = parseFloat(document.getElementById("preco").value);
+      const metragemInput = document.getElementById("metroManual").value.trim().replace(',', '.');
+      const metragem = parseFloat(metragemInput);
 
-      const metragem = tamanhos[tipo][tamanho];
+      if (isNaN(metragem) || metragem <= 0) {
+        alert("Digite uma metragem válida.");
+        return;
+      }
+
       const totalMetros = metragem * quantidade;
       const totalValor = totalMetros * preco;
 
-      totalGeral += totalValor;
-      totalMetrosGeral += totalMetros;
-      historico.push({ tipo, tamanho, quantidade, totalMetros, totalValor });
+      historico.push({ tipo, quantidade, metragem, totalMetros, totalValor });
 
+      atualizarTotais();
       exibirResultado();
+    }
+
+    function atualizarTotais() {
+      totalGeral = historico.reduce((soma, item) => soma + item.totalValor, 0);
+      totalMetrosGeral = historico.reduce((soma, item) => soma + item.totalMetros, 0);
     }
 
     function exibirResultado() {
       const div = document.getElementById("resultado");
-      let html = "<strong>Resumo:</strong><br><ul>";
-      historico.forEach((item) => {
-        html += `<li>${item.quantidade}x ${item.tipo} ${item.tamanho} = ${item.totalMetros.toFixed(2)} m² → R$ ${item.totalValor.toFixed(2)}</li>`;
+      let html = "<strong>Resumo:</strong><br>";
+      historico.forEach((item, index) => {
+        html += `<div class="item">
+                    <div class="detalhe">
+                      <strong>${item.quantidade}x</strong> ${item.tipo} (${item.metragem.toFixed(2)} m² cada)
+                      <span>${item.totalMetros.toFixed(2)} m² → R$ ${item.totalValor.toFixed(2)}</span>
+                    </div>
+                    <button onclick="removerItem(${index})">🗑️</button>
+                  </div>`;
       });
-      html += `</ul><strong>Total Geral:</strong><br>🔹 ${totalMetrosGeral.toFixed(2)} m²<br>🔹 R$ ${totalGeral.toFixed(2)}`;
+      html += `<div class="total">
+                  <p><span style="color: #007bff; font-weight: bold;">🔹 ${totalMetrosGeral.toFixed(2)} m²</span> TOTAL EM METROS</p>
+                  <p><span style="color: #007bff; font-weight: bold;">🔹 R$ ${totalGeral.toFixed(2)}</span> TOTAL A RECEBER</p>
+               </div>`;
       div.innerHTML = html;
+    }
+
+    function removerItem(index) {
+      historico.splice(index, 1);
+      atualizarTotais();
+      exibirResultado();
     }
 
     function limpar() {
@@ -122,6 +194,10 @@
       totalMetrosGeral = 0;
       historico = [];
       document.getElementById("resultado").innerHTML = "";
+    }
+
+    function printPage() {
+      window.print();
     }
   </script>
 </body>
